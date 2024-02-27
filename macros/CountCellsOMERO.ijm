@@ -6,13 +6,16 @@
 // @String(label="ROI prefix", value='batch_mask') ROI_prefix
 
 /*
- * Macro to process multiple .czi-files (Scenes) and measure cell numbers in 
- * by Michael Gerlach (michael.gerlach2@tu-dresden.de) for 
- * Anett Jannasch adapted to work with OMERO by Tom Boissonet and Michele Bortolomeazzi
+ * Macro developed by Michael Gerlach (michael.gerlach2@tu-dresden.de) for 
+ * Anett Jannasch adapted to work with OMERO by Tom Boissonet and Michele Bortolomeazzi.
+ * This macro processes all images in a given dataset and measures cell numbers
+ * in each ROI matching a given prefix. Images with no matching ROIs are skipped.
+ * The resulting ROIs are saved back to OMERO, togheter with tables reporting the number of cells.
  * The macro is applied to all images in the dataset.
  * Only ROIs matching the prefix are used. Images with no matching ROIs are skipped
- * Requires ColorDeconvolution 2 (https://blog.bham.ac.uk/intellimic/g-landini-software/colour-deconvolution-2/)
- * Requires StarDist and CSBDDeep plugins
+ * Requires: 
+ * - OMERO_macro-extensions (https://github.com/GReD-Clermont/omero_macro-extensions)
+ * - ColorDeconvolution 2 (https://blog.bham.ac.uk/intellimic/g-landini-software/colour-deconvolution-2/)
  * Correctly adjust White Balance before use!
  */
 
