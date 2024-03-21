@@ -2,6 +2,7 @@
 // @String(label="Password", style='password', persist=false) PASSWORD
 // @String(label="Host", value='omero-host-address') HOST
 // @Integer(label="Port", value=4064) PORT
+// @Integer(label="Group ID") GROUP
 // @Integer(label="Dataset ID", value=0) dataset_id
 // @String(label="ROI prefix", value='batch_mask') ROI_prefix
 
@@ -31,8 +32,9 @@ run("OMERO Extensions");
 // Summary table to attach to the dataset
 dataset_table_name = "CellCountSummary_" + dataset_id
 
-//Connect to OMERO
+//Connect to OMERO and switch to the correct group
 connected = Ext.connectToOMERO(HOST, PORT, USERNAME, PASSWORD);
+Ext.switchGroup(GROUP);
 
 // Get the images in the dataset
 if(connected == "true") {
