@@ -26,7 +26,7 @@ From a dialog window after starting the macro:
 - `Password` = OMERO password.
 - `Host` = Address of the OMERO server.
 - `Port` = Port of the OMERO server (default = `4064`).
-- `Group` = ID of the group the dataset belongs to.
+- `Group` = ID of the group the dataset belongs to (default = `0`, keeps the user's default group).
 - `Dataset ID` = OMERO id of the dataset to process (can be looked up from OMERO.web).
 - `ROI prefix` = Prefix of the ROI names to analyze, only matching ROIs are processed.
 
@@ -75,7 +75,7 @@ From a dialog window after starting the macro:
 - `Password` = OMERO password.
 - `Host` = Address of the OMERO server.
 - `Port` = Port of the OMERO server (default = `4064`).
-- `Group` = ID of the group the dataset belongs to.
+- `Group` = ID of the group the dataset belongs to (default = `0`, keeps the user's default group).
 - `Dataset ID` = OMERO id of the dataset to process (can be looked up from OMERO.web).
 - `Target Molecule (collagen or elastin)` =  Target molecule (default = `'collagen'`).
 - `ROI prefix` = Prefix of the ROI names to analyze, only matching ROIs are processed.
