@@ -5,6 +5,12 @@
 // @Integer(label="Group ID", value=0) GROUP
 // @Integer(label="Dataset ID", value=0) dataset_id
 // @String(label="ROI prefix", value='batch_mask') ROI_prefix
+// @String(label="Stardist Model", value= 'Versatile (fluorescent nuclei)') modelChoice
+// @String(label="Stardist Normalize Input (true/false)", value= 'true') normalizeInput
+// @String(label="Stardist percentileBottom", value= '25') percentileBottom
+// @String(label="Stardist percentileTop", value= '100') percentileTop
+// @String(label="Stardist probThresh Input", value= '0.4') probThresh
+// @String(label="Stardist nmsThresh", value= '0.4') nmsThresh
 
 /*
  * Macro developed by Michael Gerlach (michael.gerlach2@tu-dresden.de) for 
@@ -45,8 +51,8 @@ if(connected == "true") {
 }
 
 // Process the images
-for(i=0; i<image_ids.length; i++) {
-	image_id = image_ids[i];
+for(n=0; n<image_ids.length; n++) {
+	image_id = image_ids[n];
 	processImage(image_id);
 }
 
@@ -105,11 +111,18 @@ function processImage(image_id) {
 	
 	makeROItable(image_id);
 	selectWindow("Filtered_ROIs");
-	if (Table.size > 0) {
+	filtered_roi_length = Table.size;
+	if (filtered_roi_length > 0) {
 		// Process the ROIs
-		for(i=0; i<Table.size; i++){
+		for(i=0; i<filtered_roi_length; i++){
 
 			// Get the boundaries of the ROI
+			print("image_id");
+			print(image_id);
+			print("i");
+			print(i);
+			print("filtered_roi_length");
+			print(filtered_roi_length);
 			name = getResultString("Name", i, "Filtered_ROIs");
 			x1 = getResult("X", i, "Filtered_ROIs");
 			x2 = getResult("Width", i, "Filtered_ROIs") + x1 - 1;
@@ -131,7 +144,7 @@ function processImage(image_id) {
 			title = getTitle();
 			
 			// Process the image
-			analyzeImage(title, x1, y1, image_id);
+			analyzeImage(title, x1, y1, image_id, i);
 		}
 		// Save cell count table to the image and update the summary table for the dataset
 		Ext.addToTable("CellCount_" + image_id, "Filtered_ROIs", image_id);
@@ -144,8 +157,9 @@ function processImage(image_id) {
 
 //Definition of functions below
 
-function analyzeImage(title, x1, y1, image_id) {
-	// Performs colour deconvolution and cell segmantation with Stardist
+function analyzeImage(title, x1, y1, image_id, roi_image_number) {
+	// The area of the ROI is measured and everyting outside is blacked out
+	// Then it performs colour deconvolution and cell segmantation with Stardist
 	// The resulting ROIs are uploaded to OMERO and their number saved in a table
 	// x1, y1 are the coordinates of the top-left corner of the ROI, used to
 	// shift the ROIs to the original position in the original image
@@ -155,11 +169,19 @@ function analyzeImage(title, x1, y1, image_id) {
 	run("RGB Color");
 	rename(title);
 	run("Colour Deconvolution2", "vectors=[H&E 2] output=32bit_Absorbance simulated cross hide");
-	print("\\Clear");
+	//print("\\Clear");
 	selectWindow(title + "-(Colour_1)A");
+	close("\\Others");
 	run("8-bit");
-	close(title + "-(Colour_2)A");
-	close(title + "-(Colour_3)A");
+	
+	// Blackout everything outside the ROI and measure the total area and the ROI area
+	getStatistics(area);
+    ij_id = Ext.getROIs(image_id);
+	roiManager("list");
+    roi_name = Table.getString("Name", roi_image_number, "Filtered_ROIs");
+    RoiManager.selectByName(roi_name);
+    getStatistics(roi_area);
+	run("Clear Outside");
 	
 	// Applying StarDist to the presegmented images and count
 	if(roiManager("count") > 0){
@@ -168,10 +190,12 @@ function analyzeImage(title, x1, y1, image_id) {
 	}
 	
 	SDcommand = "command=[de.csbdresden.stardist.StarDist2D], args=['input':'" + title + "-(Colour_1)A',";
-	SDcommand += " 'modelChoice':'Versatile (fluorescent nuclei)', 'normalizeInput':'true', 'percentileBottom':";
-	SDcommand += " '25.0', 'percentileTop':'100.0', 'probThresh':'0.4', 'nmsThresh':'0.4', 'outputType':'ROI Manager',";
+	SDcommand += " 'modelChoice':'" + modelChoice + "', 'normalizeInput':'" + normalizeInput + "',";
+	SDcommand += " 'percentileBottom':'" + percentileBottom + "', 'percentileTop':'" + percentileTop + "',";
+	SDcommand += " 'probThresh':'" + probThresh + "', 'nmsThresh':'" + nmsThresh + "', 'outputType':'ROI Manager',";
 	SDcommand += " 'nTiles':'1', 'excludeBoundary':'2', 'roiPosition':'Automatic', 'verbose':'false',";
 	SDcommand += " 'showCsbdeepProgress':'false', 'showProbAndDist':'false'], process=[false]";
+	print(SDcommand);
 	run("Command From Macro", SDcommand);
 	
 	//Shift ROIs to their original position in the image
@@ -182,12 +206,14 @@ function analyzeImage(title, x1, y1, image_id) {
 	}
 	
 	image_name = Ext.getName("image", image_id);
-	// Add cell count to the table for the image
+	// Add cell count, ROI area, and total bounding box area to the table for the image
 	nROIs = Ext.saveROIs(image_id, "");
 	count = roiManager("count");
-	setResult("Image", i, image_id, "Filtered_ROIs");
-	setResult("ImageName", i, image_name, "Filtered_ROIs");
-	setResult("CellCount", i, count, "Filtered_ROIs");
+	setResult("Image", roi_image_number, image_id, "Filtered_ROIs");
+	setResult("ImageName", roi_image_number, image_name, "Filtered_ROIs");
+	setResult("Total_area_um2", roi_image_number, area, "Filtered_ROIs");
+	setResult("Total_ROI_area_um2", roi_image_number, roi_area, "Filtered_ROIs");
+	setResult("CellCount", roi_image_number, count, "Filtered_ROIs");
 	
 	// Cleanup
 	if(roiManager("count") > 0){
