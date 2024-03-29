@@ -29,6 +29,12 @@ From a dialog window after starting the macro:
 - `Group` = ID of the group the dataset belongs to (default = `0`, keeps the user's default group).
 - `Dataset ID` = OMERO id of the dataset to process (can be looked up from OMERO.web).
 - `ROI prefix` = Prefix of the ROI names to analyze, only matching ROIs are processed.
+- `StarDist Model` = Name of the StarDist model to use (default = `'Versatile (fluorescent nuclei)')`).
+- `StarDist Normalize Input (true/false)" =  StarDist normalizeInput parameter (default = `'true'`)
+- `StarDist percentileBottom` =  StarDist percentileBottom parameter (default = `25`)
+- `StarDist percentileTop` =  StarDist percentileTop parameter (default = `100`)
+- `StarDist probThresh` =  probThresh StarDist parameter (default = `0.4`)
+- `StarDist nmsThresh` =  nmsThresh StarDist parameter (default = `0.4`)
 
 #### Output
 The following tables are saved to OMERO:
@@ -47,6 +53,8 @@ The tables contain the following columns:
 + `T` = t slice.
 + `Label` = OMERO image id.
 + `ImageName` = Image name.
++ `Total_area_um2` = Total Area of the bounding box of the ROI (µm^2 if the pixel unit is µm).
++ `Total_ROI_area_um2` = Total Area of the ROI (µm^2 if the pixel unit is µm).
 + `CellCount` = Number of segmented cells.
   
 Additionally, ROIs for all segmented cells are added to each image.
@@ -97,7 +105,9 @@ The tables contain the following columns:
 + `T` = t slice.
 + `Label` = OMERO image id.
 + `ImageName` = Image name.
-+ `Total_area_um2` = Total area covered by the target moleclue in the ROI (µm^2 if the pixel unit is µm). 
++ `Total_area_um2` = Total Area of the bounding box of the ROI (µm^2 if the pixel unit is µm).
++ `Total_ROI_area_um2` = Total Area of the ROI (µm^2 if the pixel unit is µm).
++ `Total_Positive_area_um2` = Total area covered by the target moleclue in the ROI (µm^2 if the pixel unit is µm). 
 + `Fractional_area_percent` = Fractional (target moleule positive area / ROI area) area as a percentage.
   
 #### Attribution
