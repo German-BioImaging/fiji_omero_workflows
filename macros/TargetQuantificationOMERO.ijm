@@ -28,7 +28,7 @@ print("\\Clear");
 run("Clear Results");
 close("*");
 setOption("BlackBackground", true);
-setBatchMode(true); // Set to false for better debugging
+setBatchMode(false); // Set to false for better debugging
 run("OMERO Extensions");
 
 // Check Target molecule
@@ -108,7 +108,7 @@ function makeROItable(image_id){
 
 function processImage(image_id, total_roi_number) {
 	// Loads part of an image from OMERO (full resolution)
-	// An ROI is used to select the Area to load
+	// An ROI is used to select the Area to load (bounding box for polygons)
 	// Then the image is analyzed and the tables are updated and uploaded to OMERO
 	// total_roi_number keeps track of the processed rois
 
@@ -117,9 +117,10 @@ function processImage(image_id, total_roi_number) {
 	
 	makeROItable(image_id);
 	selectWindow("Filtered_ROIs");
-	if (Table.size > 0) {
+	filtered_roi_length = Table.size;
+	if (filtered_roi_length > 0) {
 		// Process the ROIs
-		for(i=0; i<Table.size; i++){
+		for(i=0; i<filtered_roi_length; i++){
 
 			// Get the boundaries of the ROI
 			name = getResultString("Name", i, "Filtered_ROIs");
@@ -142,8 +143,7 @@ function processImage(image_id, total_roi_number) {
 			rename(getTitle() + "["+name+"]");
 			title = getTitle();
 			
-			// Process the image
-			total_roi_number = analyzeImage(title, x1, y1, image_id, total_roi_number);
+			total_roi_number = analyzeImage(title, x1, y1, image_id, total_roi_number, i);
 			selectWindow("Filtered_ROIs"); // For the next loop
 		}
 		// Save the result table to the image and update the dataset table
@@ -158,8 +158,9 @@ function processImage(image_id, total_roi_number) {
 
 //Definition of functions below
 
-function analyzeImage(title, x1, y1, image_id, total_roi_number) {
-	// Performs color deconvolution, thresholds the image,
+function analyzeImage(title, x1, y1, image_id, total_roi_number, roi_image_number) {
+	// The area of the ROI is measured and everyting outside is blacked out
+	// Then it performs color deconvolution, thresholds the image,
 	// and measures the total area and the % of positive area
 	// The ROI upload is commented out,
 	// because it can result in a lot of complex ROIs that can slow down OMERO.web
@@ -185,6 +186,15 @@ function analyzeImage(title, x1, y1, image_id, total_roi_number) {
 	close(title + "-(Colour_1)A");
 	print("\\Clear");
 	
+	// Blackout everything outside the ROI and measure the total area and the ROI area
+	getStatistics(area);
+    ij_id = Ext.getROIs(image_id);
+	roiManager("list");
+    roi_name = Table.getString("Name", roi_image_number, "Filtered_ROIs");
+    RoiManager.selectByName(roi_name);
+    getStatistics(roi_area);
+	run("Clear Outside");
+	
 	// Cleanup ROI
 	if(roiManager("count") > 0){
 		roiManager("Deselect");
@@ -205,18 +215,18 @@ function analyzeImage(title, x1, y1, image_id, total_roi_number) {
 	
 	// Measure Positive Areas
 	selectWindow(title + selected_colour);
-	run("Set Measurements...", "area area_fraction redirect=None decimal=0");
-	run("Measure");
-	area=getResult("Area", total_roi_number);
-	areaf=getResult("%Area", total_roi_number);
-	
+	run("Create Selection");
+	getStatistics(positive_area);
+	percent_area = positive_area / roi_area * 100;
 	
 	// Add Area and Fractional Area to the table for the image
 	image_name = Ext.getName("image", image_id);
-	setResult("Image", i, image_id, "Filtered_ROIs");
-	setResult("ImageName", i, image_name, "Filtered_ROIs");
-	setResult("Total_area_um2", i, area, "Filtered_ROIs");
-	setResult("Fractional_area_percent", i, areaf, "Filtered_ROIs");
+	setResult("Image", roi_image_number, image_id, "Filtered_ROIs");
+	setResult("ImageName", roi_image_number, image_name, "Filtered_ROIs");
+	setResult("Total_area_um2", roi_image_number, area, "Filtered_ROIs");
+	setResult("Total_ROI_area_um2", roi_image_number, roi_area, "Filtered_ROIs");
+	setResult("Total_Positive_area_um2", roi_image_number, positive_area, "Filtered_ROIs");
+	setResult("Fractional_area_percent", roi_image_number, percent_area, "Filtered_ROIs");
 	
 	// MANY COMPLEX ROIs SLOW DOWN OMERO WEB TOO MUCH!
 	// Make ROI from mask and add it to ROI Manager
@@ -241,6 +251,7 @@ function analyzeImage(title, x1, y1, image_id, total_roi_number) {
 	
 	// Update to cumulative ROI count
 	total_roi_number +=1 ;
+	//roi_number_array =  newArray(total_roi_number, roi_image_number);
 	return total_roi_number;
 }
 
