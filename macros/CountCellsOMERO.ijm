@@ -32,7 +32,7 @@ print("\\Clear");
 run("Clear Results");
 close("*");
 setOption("BlackBackground", true);
-setBatchMode(true); // Set to false for better debugging
+setBatchMode(false); // Set to false for better debugging
 run("OMERO Extensions");
 
 // Summary table to attach to the dataset
@@ -155,8 +155,6 @@ function processImage(image_id) {
 	Table.reset("Filtered_ROIs"); // Cleanup
 }	
 
-//Definition of functions below
-
 function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 	// The area of the ROI is measured and everyting outside is blacked out
 	// Then it performs colour deconvolution and cell segmantation with Stardist
@@ -183,11 +181,16 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
     getStatistics(roi_area);
 	run("Clear Outside");
 	
+	// Used to create the polygon selection to filter ROIs with points outside it
+	getSelectionCoordinates(outer_xpoints, outer_ypoints);
+
+	
 	// Applying StarDist to the presegmented images and count
 	if(roiManager("count") > 0){
 		roiManager("Deselect");
 		roiManager("Delete");
 	}
+	
 	
 	SDcommand = "command=[de.csbdresden.stardist.StarDist2D], args=['input':'" + title + "-(Colour_1)A',";
 	SDcommand += " 'modelChoice':'" + modelChoice + "', 'normalizeInput':'" + normalizeInput + "',";
@@ -198,6 +201,32 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 	print(SDcommand);
 	run("Command From Macro", SDcommand);
 	
+	
+	// Removes cells intersecting the ROI borders (at pixel resolution)
+	makeSelection("Polygon", outer_xpoints, outer_ypoints);
+	setColor(42); // Set all inner pixel to an arbitrary value
+	fill();
+	setForegroundColor(100, 100, 100);
+	run("Draw", "slice");
+	setColor(255);
+	to_be_deleted = newArray();
+	for (r=0; r<roiManager("count"); r++) {
+		roiManager("Select", r);
+		Roi.getContainedPoints(xpoints, ypoints);
+		for(n=0; n < xpoints.length; n++)
+		{	// if at least one pixel doesn't have the inner value, delete the roi
+			if (getPixel(xpoints[n], ypoints[n]) != 42){
+				to_be_deleted = Array.concat(to_be_deleted, r);
+				break;
+			}
+		}	
+	}
+	if (to_be_deleted.length > 0){
+		roiManager("Select", to_be_deleted);
+		roiManager("Delete");
+	}
+	
+		
 	//Shift ROIs to their original position in the image
 	for (o=0; o<roiManager("count"); ++o) {
 		roiManager("Select", o);
@@ -222,3 +251,6 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 	}
 	close("*");
 }
+
+
+
