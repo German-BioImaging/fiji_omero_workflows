@@ -3,6 +3,8 @@
 // @String(label="Host", value='omero-host-address') HOST
 // @Integer(label="Port", value=4064) PORT
 // @Integer(label="Group ID", value=0) GROUP
+// @Boolean(label="Process By Tag", value=false) process_by_tag
+// @String(label="Tag Name", value="to_process") tag_to_use
 // @Integer(label="Dataset ID", value=0) dataset_id
 // @String(label="ROI prefix", value='batch_mask') ROI_prefix
 // @Boolean(label="Save overlay", value=false) save_overlay
@@ -39,36 +41,64 @@ run("OMERO Extensions");
 // Get a timestamp
 timestamp = MakeTimestamp();
 
-// Summary table to attach to the dataset
-dataset_table_name = "CellCountSummary_" + dataset_id
-
 //Connect to OMERO and switch to the correct group
 connected = Ext.connectToOMERO(HOST, PORT, USERNAME, PASSWORD);
 if (GROUP > 0) {
     Ext.switchGroup(GROUP);
 }
 
-// Get the images in the dataset
-if(connected == "true") {
-    images = Ext.list("images", "dataset", dataset_id);
-    image_ids = split(images, ",");
+// Select datasets to be processed
+datasets_to_process = newArray();
+if(process_by_tag) { // Select by tag
+    datasets = Ext.list("datasets");
+	datasetIds = split(datasets,",");
+	for (d = 0; d < datasetIds.length; d++){
+		tags = Ext.list("tags", "dataset", datasetIds[d]);
+		tagIds = split(tags,",");
+		for (t = 0; t < tagIds.length; t++)
+		{
+			tagName = Ext.getName("tag", tagIds[t]);
+			if (tagName == tag_to_use)
+			{
+				datasets_to_process = Array.concat(datasets_to_process, datasetIds[d]);
+				break
+			}
+		}
+	}
+} else { // Process the single dataset provided as an argument
+	datasets_to_process = Array.concat(datasets_to_process, dataset_id);
 }
 
-// Process the images
-for(n=0; n<image_ids.length; n++) {
-	image_id = image_ids[n];
-	processImage(image_id);
+
+// Process the datasets
+for (d=0; d<datasets_to_process.length; d++){
+
+	// dataset id and table name
+	dataset_id = datasets_to_process[d];
+	dataset_table_name = "CellCountSummary_" + dataset_id + "_" + timestamp;
+	Table.create(dataset_table_name);
+	
+	// Get the images in the dataset
+	images = Ext.list("images", "dataset", dataset_id);
+	image_ids = split(images, ",");
+	
+	// Process the images
+	for(n=0; n<image_ids.length; n++) {
+		image_id = image_ids[n];
+		processImage(image_id);
+	}
+	
+	// Save cell count table to the dataset
+	Ext.saveTable(dataset_table_name, "Dataset", dataset_id);
+	
+	// Attach Stardist parameters as file
+	AttachParamsFile(timestamp, dataset_id);
 }
-
-// Save cell count table to the dataset
-Ext.saveTable(dataset_table_name, "Dataset", dataset_id);
-
-// Attach Stardist parameters as file
-AttachParamsFile(timestamp, dataset_id);
 
 //Close everything and disconnect
 close("*");
 Ext.disconnect();
+print("DONE!");
 
 //Definition of functions below
 function makeROItable(image_id){
@@ -157,7 +187,6 @@ function processImage(image_id) {
 		Ext.addToTable("CellCount_" + image_id, "Filtered_ROIs", image_id);
 		Ext.addToTable(dataset_table_name, "Filtered_ROIs", image_id);
 		Ext.saveTable("CellCount_" + image_id, "image", image_id);
-		Table.reset("Overlay Elements of tmp_load"); // Cleanup (maybe unnecessary)
 	}
 	Table.reset("Filtered_ROIs"); // Cleanup
 }	
@@ -246,7 +275,8 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 	for (o=0; o<roiManager("count"); ++o) {
 		roiManager("Select", o);
 		run("Translate... ", "x="+x1+" y="+y1);
-		roiManager("rename", roi_name + "-" + timestamp);
+		roiManager("update");
+		roiManager("rename", "Cell-" + roi_name + "-" + timestamp);
 		roiManager("update");
 	}
 	
