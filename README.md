@@ -12,7 +12,8 @@ The specific requirements for each macro are listed in the corresponding section
 The macro is at:
 https://github.com/German-BioImaging/fiji_omero_workflows/blob/main/macros/CountCellsOMERO.ijm
 
-This macro processes all images in a given dataset and measures cell numbers in each ROI matching a given prefix.
+This macro processes all images in a given dataset (or multiple datasets with a given tag) and measures cell numbers in each ROI matching a given prefix.
+Cells touching the ROI border are discarded.
 Images with no matching ROIs are skipped.
 The resulting ROIs are saved back to OMERO, togheter with tables reporting the number of cells.
 
@@ -27,7 +28,9 @@ From a dialog window after starting the macro:
 - `Host` = Address of the OMERO server.
 - `Port` = Port of the OMERO server (default = `4064`).
 - `Group` = ID of the group the dataset belongs to (default = `0`, keeps the user's default group).
-- `Dataset ID` = OMERO id of the dataset to process (can be looked up from OMERO.web).
+- `Process By Tag` = Select multiple datasets to process (default = `false`) 
+- `Tag Name` = All datasets with these tags in the current group are processed (only if `Process By Tag` = `True`) (default = `'to_process'`).
+- `Dataset ID` = OMERO id of the dataset to process (only considered when `Process By Tag` = `false` can be looked up from OMERO.web).
 - `ROI prefix` = Prefix of the ROI names to analyze, only matching ROIs are processed.
 - `StarDist Model` = Name of the StarDist model to use (default = `'Versatile (fluorescent nuclei)')`).
 - `StarDist Normalize Input (true/false)" =  StarDist normalizeInput parameter (default = `'true'`)
@@ -70,7 +73,7 @@ https://doi.org/10.1063/5.0182672
 The macro is at:
 https://github.com/German-BioImaging/fiji_omero_workflows/blob/main/macros/TargetQuantificationOMERO.ijm
 
-This macro processes all images in a given dataset and measures the area positive for collagen or elastin
+This macro processes all images in a given dataset (or multiple datasets with a given tag) and measures the area positive for collagen or elastin
 (see code for color deconvolution and thresholding parameters). Images with no matching ROIs are skipped.
 The measured areas are saved as tables in OMERO.
 
@@ -84,7 +87,9 @@ From a dialog window after starting the macro:
 - `Host` = Address of the OMERO server.
 - `Port` = Port of the OMERO server (default = `4064`).
 - `Group` = ID of the group the dataset belongs to (default = `0`, keeps the user's default group).
-- `Dataset ID` = OMERO id of the dataset to process (can be looked up from OMERO.web).
+- `Process By Tag` = Select multiple datasets to process (default = `false`) 
+- `Tag Name` = All datasets with these tags in the current group are processed (only if `Process By Tag` = `True`) (default = `'to_process'`).
+- `Dataset ID` = OMERO id of the dataset to process (only considered when `Process By Tag` = `false` can be looked up from OMERO.web).
 - `Target Molecule (collagen or elastin)` =  Target molecule (default = `'collagen'`).
 - `ROI prefix` = Prefix of the ROI names to analyze, only matching ROIs are processed.
 
