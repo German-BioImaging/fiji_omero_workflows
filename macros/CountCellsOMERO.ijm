@@ -35,6 +35,9 @@ setOption("BlackBackground", true);
 setBatchMode(false); // Set to false for better debugging
 run("OMERO Extensions");
 
+// Get a timestamp
+timestamp = MakeTimestamp();
+
 // Summary table to attach to the dataset
 dataset_table_name = "CellCountSummary_" + dataset_id
 
@@ -58,6 +61,9 @@ for(n=0; n<image_ids.length; n++) {
 
 // Save cell count table to the dataset
 Ext.saveTable(dataset_table_name, "Dataset", dataset_id);
+
+// Attach Stardist parameters as file
+AttachParamsFile(timestamp, dataset_id);
 
 //Close everything and disconnect
 close("*");
@@ -191,7 +197,6 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 		roiManager("Delete");
 	}
 	
-	
 	SDcommand = "command=[de.csbdresden.stardist.StarDist2D], args=['input':'" + title + "-(Colour_1)A',";
 	SDcommand += " 'modelChoice':'" + modelChoice + "', 'normalizeInput':'" + normalizeInput + "',";
 	SDcommand += " 'percentileBottom':'" + percentileBottom + "', 'percentileTop':'" + percentileTop + "',";
@@ -236,7 +241,7 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 	
 	image_name = Ext.getName("image", image_id);
 	// Add cell count, ROI area, and total bounding box area to the table for the image
-	nROIs = Ext.saveROIs(image_id, "");
+	nROIs = Ext.saveROIs(image_id);
 	count = roiManager("count");
 	setResult("Image", roi_image_number, image_id, "Filtered_ROIs");
 	setResult("ImageName", roi_image_number, image_name, "Filtered_ROIs");
@@ -252,5 +257,28 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 	close("*");
 }
 
+function MakeTimestamp(){
+	getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
+    TimeString = toString(year) + "-" + toString(month) + "-" + toString(dayOfMonth) + "-";
+    TimeString += toString(hour) + "." + toString(minute) + "." + toString(second) + ".";
+	TimeString += toString(msec);
+	return TimeString;
+}
 
-
+function AttachParamsFile(timestamp, dataset_id) {
+	
+	txt_file_path = getDir("temp") + timestamp + "-CountCellsOMERO.txt";
+	print(txt_file_path);
+	txt_file = File.open(txt_file_path);
+	
+	print(txt_file, "modelChoice" + "\t" + modelChoice);
+	print(txt_file, "normalizeInput" + "\t" + normalizeInput);
+	print(txt_file, "percentileBottom" + "\t" + percentileBottom);
+	print(txt_file, "percentileTop" + "\t" + percentileTop);
+	print(txt_file, "probThresh" + "\t" + probThresh);
+	print(txt_file, "nmsThresh" + "\t" + nmsThresh);
+	
+	File.close(txt_file);
+	file_id = Ext.addFile("Dataset", dataset_id, txt_file_path);
+	//deleted = File.delete(txt_file);
+}
