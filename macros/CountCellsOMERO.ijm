@@ -211,7 +211,7 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 	makeSelection("Polygon", outer_xpoints, outer_ypoints);
 	setColor(42); // Set all inner pixel to an arbitrary value
 	fill();
-	setForegroundColor(100, 100, 100);
+	setForegroundColor(100, 100, 100); // Set border pixel to a different value
 	run("Draw", "slice");
 	setColor(255);
 	to_be_deleted = newArray();
@@ -230,7 +230,6 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 		roiManager("Select", to_be_deleted);
 		roiManager("Delete");
 	}
-	
 		
 	//Shift ROIs to their original position in the image
 	// Rename ROIs as "current ROI name  - timestamp"
@@ -260,6 +259,8 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 }
 
 function MakeTimestamp(){
+	// Returns a timestamp in the form:
+	// year-month-day-hour.minute.second.millisecond
 	getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
     TimeString = toString(year) + "-" + toString(month) + "-" + toString(dayOfMonth) + "-";
     TimeString += toString(hour) + "." + toString(minute) + "." + toString(second) + ".";
@@ -268,9 +269,12 @@ function MakeTimestamp(){
 }
 
 function AttachParamsFile(timestamp, dataset_id) {
+	// Makes a txt file in the temp folder
+	// Adds the parameters used by stardist (1 per row tab separated)
+	// Attaches the file to the dataset
+	// Deletes the file
 	
 	txt_file_path = getDir("temp") + timestamp + "-CountCellsOMERO.txt";
-	print(txt_file_path);
 	txt_file = File.open(txt_file_path);
 	
 	print(txt_file, "modelChoice" + "\t" + modelChoice);
@@ -282,5 +286,5 @@ function AttachParamsFile(timestamp, dataset_id) {
 	
 	File.close(txt_file);
 	file_id = Ext.addFile("Dataset", dataset_id, txt_file_path);
-	//deleted = File.delete(txt_file);
+	deleted = File.delete(txt_file);
 }
