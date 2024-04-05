@@ -6,6 +6,7 @@
 // @Integer(label="Dataset ID", value=0) dataset_id
 // @String(label="Target Molecule (collagen or elastin)", value='collagen') target
 // @String(label="ROI prefix", value='batch_mask') ROI_prefix
+// @Boolean(label="Save overlay", value=false) save_overlay
 
 /*
  * Macro developed by Michael Gerlach (michael.gerlach2@tu-dresden.de) for 
@@ -194,6 +195,7 @@ function analyzeImage(title, x1, y1, image_id, total_roi_number, roi_image_numbe
     RoiManager.selectByName(roi_name);
     getStatistics(roi_area);
 	run("Clear Outside");
+	getSelectionCoordinates(outer_xpoints, outer_ypoints); // Used to draw the ROI if required
 	
 	// Cleanup ROI
 	if(roiManager("count") > 0){
@@ -241,6 +243,24 @@ function analyzeImage(title, x1, y1, image_id, total_roi_number, roi_image_numbe
 	//}
 	// Save ROIs back to OMERO
 	//nROIs = Ext.saveROIs(image_id, "");
+	
+	// Save Overlay
+	if(save_overlay)
+	{
+		
+		run ("Create Selection");   // Make ROI from mask and add it to ROI Manager           
+		roiManager("Add");
+		roiManager("Combine"); 
+		makeSelection("Polygon", outer_xpoints, outer_ypoints);
+		setColor(42); // Set all inner pixel to an arbitrary value
+		fill();
+		setForegroundColor(100, 100, 100); // Set border pixels to a different value
+		run("Draw", "slice");
+		setForegroundColor(255, 255, 255); // Set drawing color to white
+		roiManager("Draw");
+		newImageId = Ext.importImage(dataset_id);
+	}
+	
 	
 	//Cleanup
 	if(roiManager("count") > 0){
