@@ -233,9 +233,11 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 	
 		
 	//Shift ROIs to their original position in the image
+	// Rename ROIs as "current ROI name  - timestamp"
 	for (o=0; o<roiManager("count"); ++o) {
 		roiManager("Select", o);
 		run("Translate... ", "x="+x1+" y="+y1);
+		roiManager("rename", roi_name + "-" + timestamp);
 		roiManager("update");
 	}
 	
