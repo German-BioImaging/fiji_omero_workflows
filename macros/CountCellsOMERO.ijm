@@ -5,6 +5,7 @@
 // @Integer(label="Group ID", value=0) GROUP
 // @Integer(label="Dataset ID", value=0) dataset_id
 // @String(label="ROI prefix", value='batch_mask') ROI_prefix
+// @Boolean(label="Save overlay", value=false) save_overlay
 // @String(label="Stardist Model", value= 'Versatile (fluorescent nuclei)') modelChoice
 // @String(label="Stardist Normalize Input (true/false)", value= 'true') normalizeInput
 // @String(label="Stardist percentileBottom", value= '25') percentileBottom
@@ -164,6 +165,8 @@ function processImage(image_id) {
 function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 	// The area of the ROI is measured and everyting outside is blacked out
 	// Then it performs colour deconvolution and cell segmantation with Stardist
+	// cells touching the border of the ROI are deleted
+	// Optionally an overlay is drawn and saved to OMERO.
 	// The resulting ROIs are uploaded to OMERO and their number saved in a table
 	// x1, y1 are the coordinates of the top-left corner of the ROI, used to
 	// shift the ROIs to the original position in the original image
@@ -213,7 +216,6 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 	fill();
 	setForegroundColor(100, 100, 100); // Set border pixel to a different value
 	run("Draw", "slice");
-	setColor(255);
 	to_be_deleted = newArray();
 	for (r=0; r<roiManager("count"); r++) {
 		roiManager("Select", r);
@@ -230,7 +232,16 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 		roiManager("Select", to_be_deleted);
 		roiManager("Delete");
 	}
-		
+	
+	
+	// Save Overlay
+	if(save_overlay)
+	{
+		setForegroundColor(255, 255, 255); // Set border pixel to a different value
+		roiManager("Draw");
+		newImageId = Ext.importImage(dataset_id);
+	}
+	
 	//Shift ROIs to their original position in the image
 	// Rename ROIs as "current ROI name  - timestamp"
 	for (o=0; o<roiManager("count"); ++o) {
