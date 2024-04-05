@@ -68,13 +68,15 @@ if(process_by_tag) { // Select by tag
 } else { // Process the single dataset provided as an argument
 	datasets_to_process = Array.concat(datasets_to_process, dataset_id);
 }
-
+print("Datasets to be processed:")
+Array.print(datasets_to_process);
 
 // Process the datasets
 for (d=0; d<datasets_to_process.length; d++){
 
 	// dataset id and table name
 	dataset_id = datasets_to_process[d];
+	print("Processing dataset: " + dataset_id);
 	dataset_table_name = "CellCountSummary_" + dataset_id + "_" + timestamp;
 	Table.create(dataset_table_name);
 	
@@ -85,7 +87,9 @@ for (d=0; d<datasets_to_process.length; d++){
 	// Process the images
 	for(n=0; n<image_ids.length; n++) {
 		image_id = image_ids[n];
+		print("Processing image: " + image_id);
 		processImage(image_id);
+		print("Done with image: " + image_id);
 	}
 	
 	// Save cell count table to the dataset
@@ -93,6 +97,8 @@ for (d=0; d<datasets_to_process.length; d++){
 	
 	// Attach Stardist parameters as file
 	AttachParamsFile(timestamp, dataset_id);
+	
+	print("Done with dataset: " + dataset_id);
 }
 
 //Close everything and disconnect
