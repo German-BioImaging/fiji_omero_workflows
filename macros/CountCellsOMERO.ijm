@@ -68,7 +68,7 @@ if(process_by_tag) { // Select by tag
 } else { // Process the single dataset provided as an argument
 	datasets_to_process = Array.concat(datasets_to_process, dataset_id);
 }
-print("Datasets to be processed:")
+print("Datasets to be processed:");
 Array.print(datasets_to_process);
 
 // Process the datasets
