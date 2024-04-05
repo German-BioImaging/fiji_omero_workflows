@@ -214,7 +214,7 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 	makeSelection("Polygon", outer_xpoints, outer_ypoints);
 	setColor(42); // Set all inner pixel to an arbitrary value
 	fill();
-	setForegroundColor(100, 100, 100); // Set border pixel to a different value
+	setForegroundColor(100, 100, 100); // Set border pixels to a different value
 	run("Draw", "slice");
 	to_be_deleted = newArray();
 	for (r=0; r<roiManager("count"); r++) {
@@ -233,11 +233,10 @@ function analyzeImage(title, x1, y1, image_id, roi_image_number) {
 		roiManager("Delete");
 	}
 	
-	
 	// Save Overlay
 	if(save_overlay)
 	{
-		setForegroundColor(255, 255, 255); // Set border pixel to a different value
+		setForegroundColor(255, 255, 255); // Set drawing color to white
 		roiManager("Draw");
 		newImageId = Ext.importImage(dataset_id);
 	}
