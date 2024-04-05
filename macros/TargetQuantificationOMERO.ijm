@@ -4,6 +4,8 @@
 // @Integer(label="Port", value=4064) PORT
 // @Integer(label="Group ID", value=0) GROUP
 // @Integer(label="Dataset ID", value=0) dataset_id
+// @Boolean(label="Process By Tag", value=false) process_by_tag
+// @String(label="Tag Name", value="to_process") tag_to_use
 // @String(label="Target Molecule (collagen or elastin)", value='collagen') target
 // @String(label="ROI prefix", value='batch_mask') ROI_prefix
 // @Boolean(label="Save overlay", value=false) save_overlay
@@ -32,13 +34,13 @@ setOption("BlackBackground", true);
 setBatchMode(false); // Set to false for better debugging
 run("OMERO Extensions");
 
+// Get a timestamp
+timestamp = MakeTimestamp();
+
 // Check Target molecule
 if (target != "elastin" && target != "collagen" ){
 	exit("target can be only 'elastin' or 'collagen'!")
 }
-
-// Summary table to attach to the dataset
-dataset_table_name = target + "_Summary_" + dataset_id;
 
 //Connect to OMERO and switch to the correct group
 connected = Ext.connectToOMERO(HOST, PORT, USERNAME, PASSWORD);
@@ -46,26 +48,62 @@ if (GROUP > 0) {
     Ext.switchGroup(GROUP);
 }
 
-// Get the images in the dataset
-if(connected == "true") {
-    images = Ext.list("images", "dataset", dataset_id);
-    image_ids = split(images, ",");
+// Select datasets to be processed
+datasets_to_process = newArray();
+if(process_by_tag) { // Select by tag
+    datasets = Ext.list("datasets");
+	datasetIds = split(datasets,",");
+	for (d = 0; d < datasetIds.length; d++){
+		tags = Ext.list("tags", "dataset", datasetIds[d]);
+		tagIds = split(tags,",");
+		for (t = 0; t < tagIds.length; t++)
+		{
+			tagName = Ext.getName("tag", tagIds[t]);
+			if (tagName == tag_to_use)
+			{
+				datasets_to_process = Array.concat(datasets_to_process, datasetIds[d]);
+				break
+			}
+		}
+	}
+} else { // Process the single dataset provided as an argument
+	datasets_to_process = Array.concat(datasets_to_process, dataset_id);
 }
+print("Datasets to be processed:");
+Array.print(datasets_to_process);
 
-// Process the images
-total_roi_number = 0; // Used to keep a count for the result table
-for(i=0; i<image_ids.length; i++) {
-	image_id = image_ids[i];
-	total_roi_number = processImage(image_id, total_roi_number);
+// Process the datasets
+for (d=0; d<datasets_to_process.length; d++){
+
+	// dataset id and table name
+	dataset_id = datasets_to_process[d];
+	print("Processing dataset: " + dataset_id);
+	dataset_table_name = target + "_Summary_" + dataset_id + "_" + timestamp;
+	Table.create(dataset_table_name);
+	
+	// Get the images in the dataset
+	images = Ext.list("images", "dataset", dataset_id);
+	image_ids = split(images, ",");
+	
+	// Process the images
+	total_roi_number = 0;
+	for(n=0; n<image_ids.length; n++) {
+		image_id = image_ids[n];
+		print("Processing image: " + image_id);
+		processImage(image_id, total_roi_number);
+		print("Done with image: " + image_id);
+	}
+	
+	// Save cell count table to the dataset
+	Ext.saveTable(dataset_table_name, "Dataset", dataset_id);
+	
+	print("Done with dataset: " + dataset_id);
 }
-
-// Updates and saves the summary table for the dataset
-Ext.saveTable(dataset_table_name, "Dataset", dataset_id);
-
 
 //Close everything and disconnect
 close("*");
 Ext.disconnect();
+print("DONE!");
 
 
 //Definition of functions below
@@ -230,24 +268,9 @@ function analyzeImage(title, x1, y1, image_id, total_roi_number, roi_image_numbe
 	setResult("Total_Positive_area_um2", roi_image_number, positive_area, "Filtered_ROIs");
 	setResult("Fractional_area_percent", roi_image_number, percent_area, "Filtered_ROIs");
 	
-	// MANY COMPLEX ROIs SLOW DOWN OMERO WEB TOO MUCH!
-	// Make ROI from mask and add it to ROI Manager
-	//run ("Create Selection");              
-	//roiManager("Add");
-	//roiManager("Combine")
-	// Shift ROIs to their original position in the image  for verification purposes
-	//for (o=0; o<roiManager("count"); ++o) {
-	//	roiManager("Select", o);
-	//	run("Translate... ", "x=" + x1 + " y=" + y1 + " z=0 c=0 t=0");
-	//	roiManager("update");
-	//}
-	// Save ROIs back to OMERO
-	//nROIs = Ext.saveROIs(image_id, "");
-	
 	// Save Overlay
 	if(save_overlay)
 	{
-		
 		run ("Create Selection");   // Make ROI from mask and add it to ROI Manager           
 		roiManager("Add");
 		roiManager("Combine"); 
@@ -260,7 +283,6 @@ function analyzeImage(title, x1, y1, image_id, total_roi_number, roi_image_numbe
 		roiManager("Draw");
 		newImageId = Ext.importImage(dataset_id);
 	}
-	
 	
 	//Cleanup
 	if(roiManager("count") > 0){
@@ -275,6 +297,14 @@ function analyzeImage(title, x1, y1, image_id, total_roi_number, roi_image_numbe
 	return total_roi_number;
 }
 
-
+function MakeTimestamp(){
+	// Returns a timestamp in the form:
+	// year-month-day-hour.minute.second.millisecond
+	getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
+    TimeString = toString(year) + "-" + toString(month) + "-" + toString(dayOfMonth) + "-";
+    TimeString += toString(hour) + "." + toString(minute) + "." + toString(second) + ".";
+	TimeString += toString(msec);
+	return TimeString;
+}
 
 
