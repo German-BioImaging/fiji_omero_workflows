@@ -52,17 +52,17 @@ if (GROUP > 0) {
 datasets_to_process = newArray();
 if(process_by_tag) { // Select by tag
     datasets = Ext.list("datasets");
-	datasetIds = split(datasets,",");
+	datasetIds = split(datasets,","); // Get all datasets accessible in the group
 	for (d = 0; d < datasetIds.length; d++){
 		tags = Ext.list("tags", "dataset", datasetIds[d]);
-		tagIds = split(tags,",");
+		tagIds = split(tags,","); // Get all tags for the dataset
 		for (t = 0; t < tagIds.length; t++)
 		{
 			tagName = Ext.getName("tag", tagIds[t]);
-			if (tagName == tag_to_use)
+			if (tagName == tag_to_use) // If the tag matches, then the dataset is to be processed
 			{
 				datasets_to_process = Array.concat(datasets_to_process, datasetIds[d]);
-				break
+				break;
 			}
 		}
 	}
