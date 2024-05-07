@@ -1,12 +1,32 @@
 # Examples of worklfows combining Fiji and OMERO
 
 ## Environment Setup
-All macros require the following FiJi plugins:
-- OMERO_macro-extensions (https://github.com/GReD-Clermont/omero_macro-extensions)
-
 The specific requirements for each macro are listed in the corresponding sections.
 
 ## Workflows
+
+### FixSizeDownloader.groovy
+
+The macro is at:
+https://github.com/German-BioImaging/fiji_omero_workflows/blob/main/macros/FixSizeDownloader.groovy
+
+This macro is designed to download large images from OMERO and then open them at a lower resolution in Fiji, as the current plugins would only open the image at the highest possible resolution. The macro:
+1) Connects to OMERO.
+2) Downloads the fileset (can consist of multiple file associated to the image in OMERO).
+3) Open the files at the chosen pyramid level.
+4) Correct the pixel width and pixel height (match the resolution of the pyramid level).
+5) Delete the downloaded files.
+
+#### Input
+From a dialog window after starting the macro:
+- `Username` = OMERO username.
+- `Password` = OMERO password.
+- `Host` = Address of the OMERO server.
+- `Port` = Port of the OMERO server (default = `4064`).
+- `Image ID` = ID of the image (needs to be in the default group of the user, TO DO: Add group switching)
+
+#### Output
+No output, the downloaded image is deleted. The image with the chosen level of resolution is opened in Fiji, but not saved locally.
 
 ### CountCellsOMERO.ijm
 The macro is at:
@@ -18,6 +38,7 @@ Images with no matching ROIs are skipped.
 The resulting ROIs are saved back to OMERO, togheter with tables reporting the number of cells.
 
 #### Additional requirements
+- OMERO_macro-extensions (https://github.com/GReD-Clermont/omero_macro-extensions)
 -  ColorDeconvolution2 (https://blog.bham.ac.uk/intellimic/g-landini-software/colour-deconvolution-2/)
 -  StarDist and CSBDDeep plugins
 
