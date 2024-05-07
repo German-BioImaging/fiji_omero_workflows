@@ -6,6 +6,8 @@ The specific requirements for each macro are listed in the corresponding section
 ## Workflows
 
 ### FixSizeDownloader.groovy
+The macro is dervived from modifying the following script:
+https://github.com/ome/omero-guide-fiji/blob/master/scripts/groovy/open_image_after_download.groovy
 
 The macro is at:
 https://github.com/German-BioImaging/fiji_omero_workflows/blob/main/macros/FixSizeDownloader.groovy
